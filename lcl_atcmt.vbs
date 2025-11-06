@@ -6,7 +6,6 @@ Do
     commitMessage = InputBox("Enter commit message (Leave blank to exit):", "Git Commit")
 
     If commitMessage = "" Then
-        WScript.Echo "Exited."
         Exit Do
     End If
 

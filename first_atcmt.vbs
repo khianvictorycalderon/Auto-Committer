@@ -6,7 +6,6 @@ Do
     remoteRepo = InputBox("Enter Remote Repository URL (Leave blank to exit):", "Git First Commit")
 
     If remoteRepo = "" Then
-        WScript.Echo "Exited."
         Exit Do
     End If
 
