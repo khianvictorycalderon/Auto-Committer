@@ -1,45 +1,36 @@
-' GitMultiCloneCommaSilent.vbs - Clones repos in the same folder, CMD hidden
+' GitMultiCloneCommaSilent.vbs - Clones multiple repos silently without CMD window issues
 Option Explicit
 
-Dim fso, shell, inputText, repoList, repo, savePath, execObj, exitCode
+Dim fso, shell, inputText, repoList, repo, savePath, exitCode, cmd
 
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
 
-' Use the same folder as the script
+' Clone directory = script folder
 savePath = fso.GetParentFolderName(WScript.ScriptFullName)
 
-' Input box: comma-separated repo URLs
-inputText = InputBox("Paste your Git repo URLs separated by commas:" & vbCrLf & "e.g., https://github.com/user/repo1.git,https://github.com/user/repo2.git", "Git Multi Clone")
+inputText = InputBox("Paste Git repo URLs separated by commas:" & vbCrLf & _
+"Example: https://github.com/user/repo1.git, https://github.com/user/repo2.git", _
+"Git Multi Clone")
 
-If inputText = "" Then
+If Trim(inputText) = "" Then
     MsgBox "No input provided. Exiting...", vbExclamation, "Git Multi Clone"
     WScript.Quit
 End If
 
-' Split input by comma
 repoList = Split(inputText, ",")
 
-' Loop through each repo URL
 For Each repo In repoList
     repo = Trim(repo)
     If repo <> "" Then
-        shell.CurrentDirectory = savePath
-        ' Execute git clone silently
-        Set execObj = shell.Exec("cmd /c git clone """ & repo & """")
+        cmd = "cmd /c cd """ & savePath & """ && git clone """ & repo & """ >nul 2>&1"
         
-        ' Wait for process to finish
-        Do While execObj.Status = 0
-            WScript.Sleep 100
-        Loop
+        exitCode = shell.Run(cmd, 0, True) ' 0 = hidden, True = wait
         
-        ' Check exit code
-        exitCode = execObj.ExitCode
         If exitCode <> 0 Then
-            MsgBox "Error cloning repository:" & vbCrLf & repo, vbCritical, "Git Multi Clone"
-            WScript.Quit
+            MsgBox "❌ Failed cloning:" & vbCrLf & repo, vbCritical, "Git Multi Clone"
         End If
     End If
 Next
 
-MsgBox "All repositories have been successfully cloned!", vbInformation, "Git Multi Clone"
+MsgBox "✔ All repositories processed.", vbInformation, "Git Multi Clone"
