@@ -1,22 +1,19 @@
-' GitMultiCloneComma.vbs
+' GitMultiCloneCommaSilent.vbs - Clones repos in the same folder, CMD hidden
 Option Explicit
 
-Dim fso, shell, inputText, repoList, repo, savePath
+Dim fso, shell, inputText, repoList, repo, savePath, execObj, exitCode
 
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
 
-' Folder where repositories will be cloned
-savePath = "C:\GitBackups"
-If Not fso.FolderExists(savePath) Then
-    fso.CreateFolder(savePath)
-End If
+' Use the same folder as the script
+savePath = fso.GetParentFolderName(WScript.ScriptFullName)
 
 ' Input box: comma-separated repo URLs
 inputText = InputBox("Paste your Git repo URLs separated by commas:" & vbCrLf & "e.g., https://github.com/user/repo1.git,https://github.com/user/repo2.git", "Git Multi Clone")
 
 If inputText = "" Then
-    WScript.Echo "No input provided. Exiting..."
+    MsgBox "No input provided. Exiting...", vbExclamation, "Git Multi Clone"
     WScript.Quit
 End If
 
@@ -28,10 +25,21 @@ For Each repo In repoList
     repo = Trim(repo)
     If repo <> "" Then
         shell.CurrentDirectory = savePath
-        WScript.Echo "Cloning: " & repo
-        ' Run git clone, wait until finished
-        shell.Run "cmd /c git clone " & repo, 1, True
+        ' Execute git clone silently
+        Set execObj = shell.Exec("cmd /c git clone """ & repo & """")
+        
+        ' Wait for process to finish
+        Do While execObj.Status = 0
+            WScript.Sleep 100
+        Loop
+        
+        ' Check exit code
+        exitCode = execObj.ExitCode
+        If exitCode <> 0 Then
+            MsgBox "Error cloning repository:" & vbCrLf & repo, vbCritical, "Git Multi Clone"
+            WScript.Quit
+        End If
     End If
 Next
 
-WScript.Echo "All repositories have been processed."
+MsgBox "All repositories have been successfully cloned!", vbInformation, "Git Multi Clone"
